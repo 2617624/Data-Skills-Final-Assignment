@@ -1,0 +1,36 @@
+---
+title: "Week 7 Seminar"
+subtitle: "Quarto basics"
+format: 
+  html:
+    code-background: true
+    embed-resources: true
+    theme: darkly 
+    mainfont: Comic Sans MS 
+    fontsize: 100% 
+    toc: true
+    number-sections: true 
+    editor: visual
+---
+
+```{r}
+1 + 1
+```
+
+# I am the most beautiful girl
+
+Here is sentence with *italics* and also **bold** is very esayyy!
+
+Here is a link to the [RStudio/Posit webpage](https://posit.co/).
+
+Here is alink as the plain URL: <https://posit.co/>
+
+The following is a list three things I like to do for fun.
+
+-   going to the cinema
+-   hikinh and camping
+-   coding in R
+
+# 我叫dsc 我不喜欢学数学
+
+我想喝椰椰芒芒🥭 清晨起来打开窗🌞阳光美美哒💗 mjq好帅
