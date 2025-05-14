@@ -1,0 +1,247 @@
+---
+title: "Data Skills-Final Project"
+author: "2617624"
+date: 03/28/2025
+format: 
+  html:
+    toc: true
+    toc-location: left
+    df-print: paged
+    embed-resources: true
+    mainfont: "Times New Roman"
+---
+# Introduction
+
+## Aims of the Study
+This study investigates monthly trends and operational efficiency in ticket management systems through three research questions:
+
+1. How does the number of "received" and "processed" tickets fluctuate over the months?
+2. How is the Correlation between "processed" and "received" Tickets?
+3. Does the volume of received tickets affect processing efficiency?
+
+The primary goal is to visualize and compare monthly ticket volumes, assess how well processing capacity matches demand, and highlight critical periods where operational performance may falter.  This work builds on methodologies from time-series analysis and resource allocation research, adapting them to the context of service management data.
+
+# Methodology & Visualization
+
+## Background and Motivation
+Understanding ticket management dynamics is critical for optimizing resource allocation and identifying systemic inefficiencies. Seasonal fluctuations in demand, as seen in sectors like customer service or IT support, often strain processing systems, leading to bottlenecks or underutilized capacity. By analyzing monthly trends, this study addresses how organizations can anticipate demand surges, improve responsiveness, and balance workloads. The dataset’s inclusion of both received and processed tickets for each month provides a dual-axis view of operational performance, making it uniquely suited to explore these questions.
+
+## The dataset
+The initial dataset:
+
+```{r}
+library(tidyverse)
+knaflic_ticket_trend <- read_csv("datasets/knaflic_ticket_trend.csv")
+knaflic_ticket_trend
+
+```
+
+The analysis of my three research questions utilizes a synthetic dataset containing two key variables:
+
+1. received: Number of tickets submitted monthly
+
+2. processed: Number of tickets resolved monthly
+
+Furthermore, 'Months' are encoded numerically (month_num) and labeled with abbreviated names (month.abb) for clarity.
+
+## Research Question One: How does the number of "received" and "processed" tickets fluctuate over the months?
+
+This study analyzes monthly fluctuations in ticket volumes by comparing received and processed counts over 12 months using a dual-line visualization. The plot employs distinct colors (gray for ‘received’, blue for ‘processed’) and direct numeric labels to differentiate and clarify trends. 
+This visualization integrates three key design principles to enhance clarity and insight: To ensure the clarity of the Y-axis months, I chose to ensure an intuitive timeline by marking the abbreviations (Jan-Dec). Furthermore, using different colors for visual contrast (gray means received and blue means processed), and placing the counts of the two lines above the data points (vjust = -1.5) and below the data points (vjust = 2.5) respectively can prevent the data on the two lines from visually overlapping. And values can be directly compared without secondary references. Finally, set the Y-axis scale to 0-320 with an interval of 50 units to emphasize the dynamic workload and operational gap. These choices jointly prioritize readability and clarity, reduce cognitive load, and highlight key features in monthly ticket fluctuations.
+
+Here is the code:
+```{r}
+
+# Corrected code
+ggplot(knaflic_ticket_trend, aes(x = month_num, y = number, color = type)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  geom_text(
+    data = filter(knaflic_ticket_trend, type == "processed"), 
+    aes (label = number),
+    vjust = 2.5,
+    size = 3,
+    show.legend = FALSE
+  ) +
+  geom_text(
+    data = filter(knaflic_ticket_trend, type == "received"),  
+    aes (label = number),
+    vjust = -1.5,
+    size = 3,
+    show.legend = FALSE
+  ) +
+  scale_color_manual(values = c("received" = "gray", "processed" = "#4258bd")) +  
+  
+  # Match lowercase values
+  scale_x_continuous(
+    breaks = 1:12,
+    labels = month.abb,
+    expand = c(0.02, 0.02)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 320),
+    breaks = seq(0, 300, by = 50)
+  ) +
+  labs(
+    title = "Ticket Volume Trends",
+    x = "Month",
+    y = "Ticket Count",
+    color = "Ticket Type",
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5))
+
+```
+## Research Question Two: How is the Correlation between "processed" and "received" Tickets?
+
+This study visualized the relationship between processing and the number of received tickets through scatter plots, supplemented by statistical annotations. This graph uses light blue dots to represent the monthly data (both received and processed), dark blue dash line to represent the trend model, and use label to illustrate the correlation coefficient: r=0.87.
+
+Here is the code:
+```{r}
+
+library(tidyverse)
+knaflic_ticket_trend <- read_csv("datasets/knaflic_ticket_trend.csv")
+
+# Create wide format and calculate correlation
+knaflic_ticket_trend <- knaflic_ticket_trend |> 
+  pivot_wider(values_from = "number", names_from = "type") |> 
+  mutate(month = tolower(month))  # Ensure consistent month formatting
+
+correlation <- cor(knaflic_ticket_trend$processed, knaflic_ticket_trend$received) |> round(2)
+
+knaflic_ticket_trend |> 
+  ggplot(aes(x = processed, y = received)) +
+  geom_point(color = "#60ECE0", size = 3) + 
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "darkblue") +
+  geom_text(aes(label = month_num), vjust = -1, size = 4) +
+  annotate(
+    "text", 
+    x = max(knaflic_ticket_trend$received) - 20, y = min(knaflic_ticket_trend$processed), 
+    
+    # Bottom-right corner
+    label = paste("Correlation (r):", correlation),
+    color = "darkblue", 
+    size = 4.5,
+    hjust = 1.1, 
+    vjust = -1
+  ) +
+  labs(
+    title = "Correlation Between Processed and Received Tickets",
+    subtitle = "Monthly ticket trends with linear regression",
+    x = "Processed Tickets", 
+    y = "Received Tickets"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 14),
+    plot.subtitle = element_text(hjust = 0.5, margin = margin(b = 15)),
+    plot.margin = margin(20, 20, 20, 20),
+    axis.title = element_text(size = 11),
+    axis.text = element_text(color = "grey30")
+  ) +
+  coord_cartesian(clip = "off") 
+```
+## Research Question Three: How Does Processing Capacity Align with Demand Across Months? 
+
+This study evaluates monthly processing capacity alignment through a bar chart visualization, categorizing months into “Overloaded” (orange), “Balanced” (blue), and “Surplus” (green) based on the ratio of processed to received tickets. Thresholds at 85% (overload threshold) and 105% (surplus threshold) are marked with dashed lines and annotated in red to contextualize performance benchmarks.  
+
+```{r}
+
+library(tidyverse)
+
+# Data
+ticket_data <- tibble(
+  month = factor(c("january", "february", "march", "april", "may", "june",
+                  "july", "august", "september", "october", "november", "december"),
+                levels = tolower(month.name)), 
+  received = c(160, 184, 241, 149, 180, 161, 132, 202, 160, 139, 149, 177),
+  processed = c(160, 184, 237, 148, 181, 150, 123, 156, 126, 104, 124, 140)
+)
+
+# Calculate the processing rate and status classification
+capacity_analysis <- ticket_data %>%
+  mutate(
+    processing_ratio = processed / received,
+    capacity_status = case_when(
+      processing_ratio < 0.85 ~ "Overloaded",
+      between(processing_ratio, 0.85, 1.05) ~ "Balanced", # Use "between" make the logic more easier
+      processing_ratio > 1.05 ~ "Surplus"
+    )
+  )
+
+# Visualization
+ggplot(capacity_analysis, aes(x = month, y = processing_ratio, fill = capacity_status)) +
+  geom_col(width = 0.7) +
+  geom_hline(
+    yintercept = c(0.85, 1.05), 
+    linetype = "dashed", 
+    color = "grey40", 
+    linewidth = 0.6
+  ) +
+   annotate(
+    "text",
+    x = 11.7, 
+    y = 0.85, 
+    label = "85%",
+    color = "red",
+    size = 4,
+    hjust = 0, 
+    vjust = -1
+  ) +
+  annotate(
+    "text",
+    x = 11.5,  
+    y = 1.05, 
+    label = "105%",
+    color = "red",  
+    size = 4,
+    hjust = 0,
+    vjust = -1
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Overloaded" = "#FF6900", 
+      "Balanced" = "#0D00FF",
+      "Surplus" = "#1a9641")
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1), # Standardized percentage format
+    limits = c(0, 1.2),
+    breaks = seq(0, 1.2, 0.2)
+  ) +
+  labs(
+    title = "Monthly Processing Capacity Alignment",
+    subtitle = "Red: Overloaded (<85%) | Blue: Balanced | Green: Surplus (>105%)",
+    x = NULL, 
+    y = "Processing Ratio (Processed/Received)",
+    fill = "Capacity Status"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), 
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40", margin = margin(b = 10))
+  )
+
+```
+# Results
+
+## How does the number of received and processed tickets fluctuate over the months?
+
+To conclude, this visualization highlights critical patterns: August shows the largest gap (202 received vs. 156 processed), October reveals persistent inefficiency (139 received vs. 104 processed), and early months (e.g., January: 160 received vs. 160 processed) demonstrate balanced operations. By combining layered elements (`geom_line`, `geom_point`, and `geom_text`) with a minimalist theme (`theme_classic`), the plot directly answers how ticket volumes fluctuate, the peak and bottom month of both "received' and "processed".
+
+## How the Correlation between "Processed" and "Received" Tickets?
+In conclusion, this visualization highlights a strong positive correlation (r = 0.87) between processed and received tickets, indicating that higher demand months generally align with increased processing volumes. Key deviations, such as August (202 received vs. 156 processed) and October (139 received vs. 104 processed), underscore periods where processing lagged despite demand, disrupting the overall trend. The regression line (`geom_smooth`) and annotated correlation coefficient (`annotate`) quantify the relationship, while labeled month numbers (`geom_text`) contextualize outliers. By integrating these elements with a clean theme (`theme_classic`), the plot directly answers how processing efficiency correlates with demand, revealing both consistent scaling and seasonal bottlenecks.
+
+## How Does Processing Capacity Align with Demand Across Months? 
+The analysis identifies August as the most overloaded month (77% processing rate), followed by October (75%), where demand consistently outpaced capacity. Conversely, May achieved near-perfect alignment (100.5%), briefly exceeding demand. Early months (January–April) maintained balanced operations (e.g., January: 100%), demonstrating stable resource allocation. The 105% surplus threshold remained unmet across all months, highlighting no significant overcapacity periods.  
+
+# References
+
+
+```{r}
+
+
+```
+
